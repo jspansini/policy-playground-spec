@@ -6,7 +6,7 @@ Fixture **100% fictício**, criado para a fase de **Design** do Kiro Spec-Driven
 
 ## Base conceitual
 
-O relatório fotografado da POLITICA DE CREDITO descreve um JSON com nove seções: `policy`, `stages`, `rules`, `variables`, `parameters`, `dag`, `motivos`, `validation_map`, `output_vars`. O artefato analisado no relatório tinha 109 regras, quatro etapas e dependências. Este fixture reduz a escala para **9 regras**, **4 etapas**, **10 variáveis**, **2 parâmetros** e **3 motivos**, preservando o formato conceitual, e, desde a revisão 1.2, é acompanhado de um arquivo de extensões e de um conjunto sintético de **12 propostas**, ambos separados do Policy Spec. Os valores e a lógica das regras foram inventados para demonstração.
+O relatório fotografado da plataforma de política de crédito descreve um JSON com nove seções: `policy`, `stages`, `rules`, `variables`, `parameters`, `dag`, `motivos`, `validation_map`, `output_vars`. O artefato analisado no relatório tinha 109 regras, quatro etapas e dependências. Este fixture reduz a escala para **9 regras**, **4 etapas**, **10 variáveis**, **2 parâmetros** e **3 motivos**, preservando o formato conceitual, e, desde a revisão 1.2, é acompanhado de um arquivo de extensões e de um conjunto sintético de **12 propostas**, ambos separados do Policy Spec. Os valores e a lógica das regras foram inventados para demonstração.
 
 ## Fluxo demonstrativo
 
@@ -50,15 +50,15 @@ O Policy Spec é consumido e validado pelo Playground, mas nunca modificado. Por
 | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
 | `extends` (`file`, `policy_id`, `source_commit`)                               | Amarra as extensões a uma versão específica do Policy Spec; se não bater, as extensões são rejeitadas e o Policy Spec continua carregando | R16.2                             |
 | `policy_source` (`vcs`, `repository`, `path`, `commit`)                        | Explicita que a versão da política é um commit Git; `commit` deve ser igual a `source_commit` do Policy Spec                              | Decisão do time D-Q2; R14.6       |
-| `stage_POLITICA DE CREDITO_area`                                               | Mapeia cada etapa para uma das quatro áreas POLITICA DE CREDITO                                                                           | R1.2; OQ-18                       |
+| `stage_area`                                               | Mapeia cada etapa para uma das quatro áreas da política                                                                           | R1.2; OQ-18                       |
 | `parameter_domains` (`editable`, `type`, `min`, `max`, `step`)                 | Limites que o editor visual aplica; um valor fora do domínio é rejeitado com o intervalo aceito                                           | R2.4, R4; Notion FR-03            |
 | `datasets` (`dataset_version`, `kind`, `contains_pii`, `file`, `record_count`) | Aponta para o conjunto sintético; a `dataset_version` entra na chave de idempotência e permite reproduzir cada execução                   | Decisão do time D-Q6; design §9.4 |
 
-### Mapeamento das etapas para as quatro áreas POLITICA DE CREDITO (provisório)
+### Mapeamento das etapas para as quatro áreas da política (provisório)
 
-Os requisitos (R1.2) pedem que cada elemento indique a área POLITICA DE CREDITO de origem: Extraction, ETL, Hard filters ou Final base. As etapas deste fixture têm outros nomes, então o mapeamento fica em `stage_POLITICA DE CREDITO_area` no arquivo de extensões:
+Os requisitos (R1.2) pedem que cada elemento indique a área da política de origem: Extraction, ETL, Hard filters ou Final base. As etapas deste fixture têm outros nomes, então o mapeamento fica em `stage_area` no arquivo de extensões:
 
-| Etapa do fixture | Área POLITICA DE CREDITO | Observação                                            |
+| Etapa do fixture | Área da política       | Observação                                            |
 | ---------------- | ------------------------ | ----------------------------------------------------- |
 | 01 Extração      | Extraction               | Leitura e `cast` do payload sintético.                |
 | 02 Elegibilidade | Hard filters             | Regras `filter` (R004–R006) ligadas a motivos.        |
@@ -98,4 +98,4 @@ Este arquivo **não é uma implementação executável**. Expressões são strin
 
 ## Sugestão de uso no Kiro
 
-Adicione os quatro arquivos (`policy-playground-demo-policy.json`, `policy-playground-demo-extensions.json`, `policy-playground-demo-dataset.json` e este README) ao repositório local como material de referência. Na fase de design, peça ao Kiro para usar o JSON como fixture, mantendo `requirements.md` como fonte dos requisitos e documentando decisões, contratos, componentes, fluxos e trade-offs em `design.md`. Não apresente a política sintética como extração real da POLITICA DE CREDITO.
+Adicione os quatro arquivos (`policy-playground-demo-policy.json`, `policy-playground-demo-extensions.json`, `policy-playground-demo-dataset.json` e este README) ao repositório local como material de referência. Na fase de design, peça ao Kiro para usar o JSON como fixture, mantendo `requirements.md` como fonte dos requisitos e documentando decisões, contratos, componentes, fluxos e trade-offs em `design.md`. Não apresente a política sintética como extração real da plataforma de política de crédito.

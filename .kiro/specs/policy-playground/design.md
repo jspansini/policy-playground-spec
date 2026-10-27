@@ -6,11 +6,11 @@
 - **Version**: 1.2 (revision under review; 1.0 approved before Tasks were drafted)
 - **Status**: Design 1.0 approved; Tasks drafted from it. Revisions 1.1 and 1.2 (see *Revision History*) await approval. No implementation has started.
 - **Source of truth**: `.kiro/specs/policy-playground/requirements.md` (Requirements 1.2, R1–R16 + NFRs, including the team *Decision Log*)
-- **Concrete reference fixture**: `fixtures/policy-playground-demo-policy.json` + `fixtures/policy-playground-demo-policy-README.md` (100% synthetic; not real SYN data)
+- **Concrete reference fixture**: `fixtures/policy-playground-demo-policy.json` + `fixtures/policy-playground-demo-policy-README.md` (100% synthetic; not real credit-policy platform data)
 
 > **Reuse note (Design directive 1).** The pre-existing `design.md` was empty on disk, so there was nothing to reuse; this document is authored fresh. No prior design was discarded.
 
-> **Grounding note.** Kiro has no access to SYN. Everything about SYN's real implementation (study execution, repositories, skills, identity, `Motivo de Decisão`) is treated as unverified and marked `[Confirmar: contrato real]` or carried as an open question. The synthetic fixture is used only to make the contract and flows concrete; no numeric experiment result is invented.
+> **Grounding note.** Kiro has no access to the credit-policy platform. Everything about the platform's real implementation (study execution, repositories, skills, identity, `Motivo de Decisão`) is treated as unverified and marked `[Confirmar: contrato real]` or carried as an open question. The synthetic fixture is used only to make the contract and flows concrete; no numeric experiment result is invented.
 
 ---
 
@@ -22,7 +22,7 @@ Policy Playground lets a credit policy specialist load a consolidated **Policy S
 
 1. **Determinism and trust.** AI never produces an impact number. The impact comes from a deterministic executor over the policy chain; AI output and calculated results live in separate, separately-labeled data (R5, R7).
 2. **Human control.** Every modification is confirmed by a human before it enters a scenario; nothing auto-advances to a committed change or production (R4, R10, R12).
-3. **Minimal sufficient architecture.** A single application (web UI + one backend) with internal modules for the six responsibility boundaries, not six services. Deterministic execution and SYN integration sit behind one adapter interface so the MVP can run on the fixture and swap in real SYN later (directive in §3 of the task; requirements "most simple solution").
+3. **Minimal sufficient architecture.** A single application (web UI + one backend) with internal modules for the six responsibility boundaries, not six services. Deterministic execution and credit-policy platform integration sit behind one adapter interface so the MVP can run on the fixture and swap in real credit-policy platform later (directive in §3 of the task; requirements "most simple solution").
 4. **Traceability by construction.** Hypothesis → parameters → policy version → scenario → execution → result/evidence → finding → human decision are linked records (R14).
 
 ### Design directives carried from Requirements approval
@@ -74,7 +74,7 @@ Policy Playground lets a credit policy specialist load a consolidated **Policy S
 |----|---------|---------------------------|------------------------|
 | D-1 | **Single application**: SPA front-end + one backend API, modular monolith. | "solução mais simples"; MVP demonstrativo. R1–R16 não exigem múltiplos serviços. | Microsserviços por boundary — custo sem demanda. |
 | D-2 | **Policy Spec is the single structured source of context**; everything (UI, discovery, execution) reads the same loaded+validated model. | R16, R1, R5.3. | Reconstruir política a cada investigação — proibido por R16.3. |
-| D-3 | **Deterministic execution behind one `ImpactStudyRunner` adapter interface.** MVP ships a `SimulatedRunner` (fixture) + leaves a `SynStudyRunner` seam. | R5.2 (capacidade genérica, arquivo atual é referência), R5.5/5.8 (real preferido, fallback rotulado). | Acoplar ao `analise de impacto de estudos` como API — proibido por R5.2. |
+| D-3 | **Deterministic execution behind one `ImpactStudyRunner` adapter interface.** MVP ships a `SimulatedRunner` (fixture) + leaves a `RealStudyRunner` seam. | R5.2 (capacidade genérica, arquivo atual é referência), R5.5/5.8 (real preferido, fallback rotulado). | Acoplar ao `analise de impacto de estudos` como API — proibido por R5.2. |
 | D-4 | **AI is advisory only and physically separated from calculation.** The orchestrator may call the runner but may never write a result value; results carry `source: deterministic`, AI output carries `source: ai_suggestion`. | R5.10, R7. | IA calcular/estimar impacto — proibido. |
 | D-5 | **Scenario = immutable baseline + parameter overrides (diff).** Baseline is never mutated. | R4.4, R5.9, R6. | Editar o modelo carregado — perderia o baseline. |
 | D-6 | **Rule logic is interpreted by a closed, typed evaluator** supporting only the known logic types (`json_extract`, `case_when`, `matrix_lookup`); no arbitrary expression execution. | fixture README; R5.1; segurança §12. | Avaliar expressões SQL-like livres ou código do modelo — risco de segurança. |
@@ -116,7 +116,7 @@ flowchart TB
 
     subgraph EXT["External / seams"]
         Spec[("Policy Spec JSON\n(upstream input)")]
-        Runner[["Study runner impl\nSimulated (MVP) | SYN (future)"]]
+        Runner[["Study runner impl\nSimulated (MVP) | Real (future)"]]
         Model[["AI model\n(advisory only)"]]
         GovData[("Governed data\nMotivo de Decisão [Confirmar]")]
     end
@@ -189,12 +189,12 @@ Key invariants in this flow:
 
 ### 6.1 Policy Spec (input, from the fixture contract)
 
-The design treats the fixture's nine sections as the **working contract**, each `[Confirmar: contrato real]` against the true SYN artifact. The Playground never changes this artifact (R16.3); everything the Playground adds lives in a separate extensions file (§6.1.1).
+The design treats the fixture's nine sections as the **working contract**, each `[Confirmar: contrato real]` against the true credit-policy platform artifact. The Playground never changes this artifact (R16.3); everything the Playground adds lives in a separate extensions file (§6.1.1).
 
 | Section | Role in design | Notes / known gaps |
 |---------|----------------|--------------------|
 | `policy` | Identity + version (`id`, `source_commit`, `extracted_at`, `mode`). | `source_commit` is the Git commit (team decision D-Q2) and, with the S3 object version, forms the **policy version** used in audit and in the idempotency key (R14, §9.4). |
-| `stages` | Group rules and declare table I/O. | Maps rule → area for R1.2 via `rule.stage_id → stage_syn_area` in the extensions file (§6.1.1). Provisional mapping (see below, OQ-18). |
+| `stages` | Group rules and declare table I/O. | Maps rule → area for R1.2 via `rule.stage_id → stage_area` in the extensions file (§6.1.1). Provisional mapping (see below, OQ-18). |
 | `rules` | Atomic logic units: `logic.type`, `inputs`, `outputs`, `depends_on`, `parameters`, `motivo_*`. | `consumed_by` absent → derive by inverting `inputs`/`outputs`. |
 | `variables` | Typed vars with `produced_by`, `category` (input/derived/output), `payload_path`. | `produced_by: external` (e.g. `perfil`, V010) = external input. |
 | `parameters` | Editable thresholds (`value`, `unit`, `used_by`). | What-if targets. Editing limits come from `parameter_domains` in the extensions file (§6.1.1). Dedup vs. auto-extracted params. |
@@ -203,16 +203,16 @@ The design treats the fixture's nine sections as the **working contract**, each 
 | `validation_map` | Maps internal var → athena/script/dmp keys + tolerance. | For real-executor validation `[Confirmar]`; unused by SimulatedRunner. |
 | `output_vars` | Final output columns + cast. | Defines the comparable result surface. |
 
-**Stage → SYN area mapping (R1.2, OQ-18).** R1.2 names four SYN areas (Extraction, ETL, Hard filters, Final base), while the fixture stages are named Extração, Elegibilidade, Oferta and Consolidação. The extensions file (§6.1.1) therefore declares an explicit, provisional `stage_syn_area` mapping, without touching the Policy Spec:
+**Stage → policy area mapping (R1.2, OQ-18).** R1.2 names four policy areas (Extraction, ETL, Hard filters, Final base), while the fixture stages are named Extração, Elegibilidade, Oferta and Consolidação. The extensions file (§6.1.1) therefore declares an explicit, provisional `stage_area` mapping, without touching the Policy Spec:
 
-| Fixture stage | `stage_syn_area` | Rules |
+| Fixture stage | `stage_area` | Rules |
 |---------------|------------|-------|
 | 01 Extração | Extraction | R001–R003 |
 | 02 Elegibilidade | Hard filters | R004–R006 |
 | 03 Oferta | Final base | R007–R008 |
 | 04 Consolidação | Final base | R009 |
 
-The fixture has no dedicated ETL stage (transformations are embedded in extraction casts). Validation (§7.1) treats a stage with no entry in `stage_syn_area`, or with an unknown value, as a non-blocking warning: the viewer shows "área SYN não informada" instead of guessing. The real mapping is confirmed against the real contract under OQ-18 / C5.
+The fixture has no dedicated ETL stage (transformations are embedded in extraction casts). Validation (§7.1) treats a stage with no entry in `stage_area`, or with an unknown value, as a non-blocking warning: the viewer shows "área da política não informada" instead of guessing. The real mapping is confirmed against the real contract under OQ-18 / C5.
 
 ### 6.1.1 Playground extensions (complementary file, 1.2)
 
@@ -223,11 +223,11 @@ The Policy Spec is an upstream artifact that the Playground consumes and must no
 | `extends` | `file`, `policy_id`, `source_commit` of the Policy Spec it complements | Validation: must match the loaded Policy Spec |
 | `extension_version` | Version of the extensions contract | Loader |
 | `policy_source` | `vcs`, `repository`, `path`, `commit` (= `source_commit`) | Provenance shown in the viewer and in audit (team decision D-Q2) |
-| `stage_syn_area` | Stage id → SYN area | R1.2, OQ-18 |
+| `stage_area` | Stage id → policy area | R1.2, OQ-18 |
 | `parameter_domains` | Parameter id → `editable`, `type`, `min`, `max`, `step` | Visual editor limits (R2.4, R4) |
 | `datasets` | `dataset_version`, `kind`, `contains_pii`, `file`, `record_count` | `SimulatedRunner` input; `dataset_version` enters the idempotency key (§9.4, team decision D-Q6) |
 
-The synthetic records themselves are in **`fixtures/policy-playground-demo-dataset.json`**. Keeping the three files separate lets each evolve on its own cycle: a new Policy Spec commit does not require new extensions, and the same commit can run against several dataset versions. If the extensions file is missing, the Policy Spec still loads and can be explored; parameters are then read-only, SYN areas show as "não informada" and simulated execution is unavailable.
+The synthetic records themselves are in **`fixtures/policy-playground-demo-dataset.json`**. Keeping the three files separate lets each evolve on its own cycle: a new Policy Spec commit does not require new extensions, and the same commit can run against several dataset versions. If the extensions file is missing, the Policy Spec still loads and can be explored; parameters are then read-only, policy areas show as "não informada" and simulated execution is unavailable.
 
 ### 6.2 Internal model (derived, in-memory)
 
@@ -298,7 +298,7 @@ A typed evaluator interprets only the known logic types. The MVP does **not** ex
 | `case_when` | Ordered branch eval; comparison operators and references to vars/params from a **fixed, parsed grammar** — not free SQL. First true branch wins, else `else`. | R005 → `renda_mensal >= renda_minima` → `status_renda` |
 | `matrix_lookup` | Resolve `row_key`/`col_key` values, index `matrix`. | R008 → (`faixa`,`perfil`) → `limite_sugerido` |
 
-**`case_when` expression handling** is the sensitive part: the MVP parses the condition into a small, validated AST over `{var|param|literal} {comparator} {var|param|literal}` joined by `AND`/`OR` and comparisons `=,>=,<=,>,<`. Anything outside this grammar is a validation error, not a best-effort execution. The real SYN grammar may be richer → `[Confirmar: contrato real]`, OQ-15.
+**`case_when` expression handling** is the sensitive part: the MVP parses the condition into a small, validated AST over `{var|param|literal} {comparator} {var|param|literal}` joined by `AND`/`OR` and comparisons `=,>=,<=,>,<`. Anything outside this grammar is a validation error, not a best-effort execution. The real credit-policy platform grammar may be richer → `[Confirmar: contrato real]`, OQ-15.
 
 > **Note on R007 literals** (`renda_mensal >= 5000` / `>= 3000`): the fixture encodes some thresholds as literals inside the rule rather than parameters. The design surfaces these as **read-only derived thresholds** in the viewer and flags that only `parameters` (P001/P002) are editable in the MVP what-if (R2 OQ-5). Promoting literals to editable parameters is out of MVP scope.
 
@@ -353,7 +353,7 @@ interface ImpactStudyRunner {
 - `analise de impacto de estudos` is a **functional reference** for *what* the capability must do (compare produced final base vs. `Motivo de Decisão`), not an integration target (R5.2).
 - Two implementations behind the same seam:
   - **`SimulatedRunner` (MVP):** executes the closed evaluator over the sub-DAG against a **synthetic payload set**, tags every result `mode=SIMULADO`. It performs no real historical comparison — the fixture has no history (fixture README). It exists to validate the *flow and contract*, never to assert real impact.
-  - **`SynStudyRunner` (future, `[Confirmar: contrato real]`):** the preferred real path (R5.5); drives real studies and compares the final base against `Motivo de Decisão` using `validation_map`/`output_vars`.
+  - **`RealStudyRunner` (future, `[Confirmar: contrato real]`):** the preferred real path (R5.5); drives real studies and compares the final base against `Motivo de Decisão` using `validation_map`/`output_vars`.
 - The orchestrator picks the runner by configuration; **the UI always shows the result's `mode`** so a simulated number is never presented as real (R5.8).
 
 ### 9.2 Deterministic tail: code / tests / PR (Design directive 5, R11, R12)
@@ -362,22 +362,22 @@ This is the demonstrative end-to-end tail and is **feasibility-gated, not assume
 
 ```mermaid
 flowchart LR
-    Sel["Especialista seleciona\ncenário revisado"] --> Gen["Gerar código + testes\n(convenções SYN) [Feasibility]"]
+    Sel["Especialista seleciona\ncenário revisado"] --> Gen["Gerar código + testes\n(convenções da plataforma) [Feasibility]"]
     Gen --> PR["Abrir PR p/ revisão humana\n[Feasibility]"]
     PR --> Note["PR = pedido de revisão\nNUNCA merge/deploy"]
 ```
 
 - Only a human-selected, human-reviewed scenario can enter codegen (R10.3, R11.2).
-- The design **does not assume** the existing SYN documentation-generation skill produces functional code; functional codegen is a distinct capability to validate (R11.4).
-- **MVP demonstration vs. real SYN integration (explicit boundary):**
+- The design **does not assume** the existing credit-policy platform documentation-generation skill produces functional code; functional codegen is a distinct capability to validate (R11.4).
+- **MVP demonstration vs. real credit-policy platform integration (explicit boundary):**
 
-  | Capability | MVP (demonstrated, no SYN access) | Future evolution (real SYN) |
+  | Capability | MVP (demonstrated, no credit-policy platform access) | Future evolution (real credit-policy platform) |
   |------------|-----------------------------------|------------------------------|
-  | Code + tests generation | Produce a **reviewable change artifact (diff + tests) against the fixture's conventions**, clearly labeled as a demonstration, not submitted anywhere. | Generate code/tests that truly follow real SYN repo structure, validated against the actual repo. |
-  | Pull request | Show the PR *intent* and the traceable package (scenario → evidence → selection → diff); **no real PR is opened** when SYN repos/mechanics are unreachable. | Open a real PR against the appropriate SYN repository for human review. |
-  | SYN skills reuse | Not available (no SYN access in this environment). | Reuse the specialized SYN skills where applicable. |
+  | Code + tests generation | Produce a **reviewable change artifact (diff + tests) against the fixture's conventions**, clearly labeled as a demonstration, not submitted anywhere. | Generate code/tests that truly follow real credit-policy platform repo structure, validated against the actual repo. |
+  | Pull request | Show the PR *intent* and the traceable package (scenario → evidence → selection → diff); **no real PR is opened** when credit-policy platform repos/mechanics are unreachable. | Open a real PR against the appropriate credit-policy platform repository for human review. |
+  | Credit-policy platform skills reuse | Not available (no credit-policy platform access in this environment). | Reuse the specialized credit-policy platform skills where applicable. |
 
-- **Requirement-coverage flag (not a silent change):** R11.1 and R12.1 state functional SYN-consistent code and a *real* PR as intended end-to-end outcomes. In an environment with **no SYN access** (the current case), the MVP can only demonstrate the artifact-and-intent form above; opening a real PR and proving real SYN consistency are **blocked on OQ-9 / risk R-6** and are not delivered by the proposed MVP scope. The requirements are preserved as-is; this gap is surfaced in the chat summary and in §15 for human decision — not removed or redefined here.
+- **Requirement-coverage flag (not a silent change):** R11.1 and R12.1 state functional platform-consistent code and a *real* PR as intended end-to-end outcomes. In an environment with **no credit-policy platform access** (the current case), the MVP can only demonstrate the artifact-and-intent form above; opening a real PR and proving real credit-policy platform consistency are **blocked on OQ-9 / risk R-6** and are not delivered by the proposed MVP scope. The requirements are preserved as-is; this gap is surfaced in the chat summary and in §15 for human decision — not removed or redefined here.
 - PR creation (in the future form) is a request for review only, traceable back to scenario/evidence/selection, and never a merge/deploy (R12.2, R12.4, R14.3).
 
 ### 9.3 Execução real vs. validação bem-sucedida
@@ -386,7 +386,7 @@ Running a real study and *validating* its result are **two distinct steps**. The
 
 ```mermaid
 flowchart LR
-    Run["SynStudyRunner executa\n(mode=REAL)"] --> Done{"Execução completou?"}
+    Run["RealStudyRunner executa\n(mode=REAL)"] --> Done{"Execução completou?"}
     Done -->|não| CC["status=cannot_calculate\nevidenceLevel=none"]
     Done -->|sim| Vstep["Passo de validação\n(validation_map / output_vars)"]
     Vstep --> Vok{"Critérios de validação\nsatisfeitos?"}
@@ -419,7 +419,7 @@ stateDiagram-v2
 - **Idempotency key** = `sha256(policyVersion, sorted(overrides), datasetVersion, runnerVersion)`. `policyVersion` is the Policy Spec `source_commit` (Git commit, team decision D-Q2) plus the object version in S3; `datasetVersion` identifies the anonymized/synthetic snapshot (D-Q6).
 - **Reuse.** If a successful `ExecutionResult` with the same key exists, the job returns it immediately (`attempt` is not incremented and no new compute runs). This makes retries safe (NFR Reliability 3) and saves cost (NFR FinOps 3).
 - **Reproducibility (R14.6).** Re-running a recorded key against the recorded versions must produce the same `outputs`; a mismatch is surfaced as an integrity error and never silently replaces the original result.
-- **Where it runs.** `SimulatedRunner` jobs are light and run inside the API task. `SynStudyRunner` jobs (C1) run as separate ECS tasks started on demand from the same image (team answer D-Q1: on-demand SQL/Python jobs), so a long study never blocks the API.
+- **Where it runs.** `SimulatedRunner` jobs are light and run inside the API task. `RealStudyRunner` jobs (C1) run as separate ECS tasks started on demand from the same image (team answer D-Q1: on-demand SQL/Python jobs), so a long study never blocks the API.
 - **How the interface follows it.** `GET /executions/{id}` returns `jobState` and, when done, the result; the interface polls every few seconds (team decision D-DQ4). No WebSocket infrastructure is needed for the MVP.
 - **Timeout.** Each runner has a configurable maximum duration; exceeding it ends the job with `status=cannot_calculate` and no partial number (R5.7).
 
@@ -471,7 +471,7 @@ stateDiagram-v2
 - **Bounded by design (R8.2):** the investigation module returns at most *N* suggestions per request (N a configurable session cap, default small), ranked; no unbounded stream. No autonomous red-team loop (R8 scope note). Deterministic candidates (§10.3) and model suggestions share the same cap and the same ranking.
 - **Two orthogonal axes, never collapsed into one "proven" flag:**
   - **`investigationState`** — process state per §10.1.
-  - **`evidenceLevel`** — how strong the backing is: `none` (AI suggestion only), `simulated` (a `SimulatedRunner` result over synthetic data), or `study_validated` (a real `SynStudyRunner` result **that also passed validation** — see §9.3). This is an *evidence* fact, derived only from a deterministic execution's `status`+`mode`.
+  - **`evidenceLevel`** — how strong the backing is: `none` (AI suggestion only), `simulated` (a `SimulatedRunner` result over synthetic data), or `study_validated` (a real `RealStudyRunner` result **that also passed validation** — see §9.3). This is an *evidence* fact, derived only from a deterministic execution's `status`+`mode`.
 - **A finding being `executed`/`accepted` does NOT make it real evidence.** A `SimulatedRunner` run advances `investigationState` to `executed` and sets `evidenceLevel=simulated` only — it can never set `study_validated` (R5.8, fixture README). A real run only reaches `study_validated` after validation passes (§9.3); a real run that merely completed is `executed_unvalidated`, still **not** `study_validated`.
 - **AI never sets evidence (R5.10, R7):** `source=ai_suggestion` findings are born `evidenceLevel=none`; the orchestrator derives `evidenceLevel` only from a deterministic `ExecutionResult`, never from model text. No `ai_suggestion` object ever carries a numeric impact.
 - **Cannot-answer (R7.3):** if no runner/study can evaluate a suggested scenario, the finding keeps `evidenceLevel=none` and the UI states the limitation explicitly.
@@ -585,7 +585,7 @@ Comprehensible, specific errors (fixture README requires this); never a silent f
 
 (Design-level strategy; no test code written in this phase.)
 
-- **Policy Spec validation tests** — valid fixture passes; mutated fixtures (missing field, dangling `depends_on`, injected cycle, unknown `logic.type`, duplicate parameter) each produce the right blocking error; an extensions file that does not match the Policy Spec is rejected while the Policy Spec still loads; a stage without an entry in `stage_syn_area` produces a non-blocking warning; the Policy Spec file is byte-identical before and after any session.
+- **Policy Spec validation tests** — valid fixture passes; mutated fixtures (missing field, dangling `depends_on`, injected cycle, unknown `logic.type`, duplicate parameter) each produce the right blocking error; an extensions file that does not match the Policy Spec is rejected while the Policy Spec still loads; a stage without an entry in `stage_area` produces a non-blocking warning; the Policy Spec file is byte-identical before and after any session.
 - **Generator tests (§10.3)** — for P001 = 3000 on the fixture, G1 returns R007 (with R008 attached) and G2 reports R007 `BASICA` as newly unreachable under approval, with R008 row `BASICA` attached; for P001 = 2500 (baseline) G2 reports nothing new; an out-of-grammar condition is reported as "não analisável"; no generator output carries an impact number or an `evidenceLevel` above `none`.
 - **Ranking tests** — with no assessments every kind scores 0.5 on the feedback term; after assessments the ordering follows the smoothed relevance; the cap *N* is applied after ranking.
 - **Metrics tests** — a hypothesis that reaches a deterministic result records both timestamps; one that ends in `cannot_calculate` records no evidence timestamp; the relevant-finding share counts only assessed findings.
@@ -606,7 +606,7 @@ Comprehensible, specific errors (fixture README requires this); never a silent f
 - **Degradation tests** — with the model endpoint unavailable, exploration, visual editing, execution and decisions still work and the interface states that AI features are unavailable.
 ### 14.1 Matriz de cobertura dos requisitos
 
-Three distinct columns: **Addressed** = the design has an architectural answer; **Delivered in MVP** = the MVP, running on the synthetic fixture with no SYN access, actually exercises it; **Depends on OQ/feasibility** = blocked or partial until a decision/validation. "Delivered in MVP" is **not** claimed for anything that is only architecturally foreseen.
+Three distinct columns: **Addressed** = the design has an architectural answer; **Delivered in MVP** = the MVP, running on the synthetic fixture with no credit-policy platform access, actually exercises it; **Depends on OQ/feasibility** = blocked or partial until a decision/validation. "Delivered in MVP" is **not** claimed for anything that is only architecturally foreseen.
 
 | Req | Addressed | Delivered in MVP | Depends on OQ/feasibility |
 |-----|:---------:|:----------------:|---------------------------|
@@ -620,7 +620,7 @@ Three distinct columns: **Addressed** = the design has an architectural answer; 
 | R8 AI discovery (bounded) | ✓ | ✓ (incl. deterministic generators G1/G2 and feedback ranking, §10.3; default cap 10) | weights tunable |
 | R9 Finding → scenario | ✓ | ✓ | OQ-8 (auto vs manual) |
 | R10 Human decision | ✓ | ✓ (Accept/Reject/Defer, immutable, superseded) | — |
-| R11 Code+tests (SYN conventions) | ✓ | ◑ **demo artifact only** | OQ-9 / R-6 (real SYN) |
+| R11 Code+tests (credit-policy platform conventions) | ✓ | ◑ **demo artifact only** | OQ-9 / R-6 (real credit-policy platform) |
 | R12 Pull request | ✓ | ◑ **PR intent only, no real PR** | OQ-9 / R-6 |
 | R13 Domain-context freshness | ✓ | ◑ staleness surfaced; auto-regen not guaranteed | OQ-2 |
 | R14 Traceability/audit | ✓ | ✓ persisted (DynamoDB) + append-only audit lake (S3) + reproducible executions | Object Lock optional |
@@ -635,23 +635,23 @@ Three distinct columns: **Addressed** = the design has an architectural answer; 
 
 Legend: ✓ fully, ◑ partial/with explicit limitation, n/a not exercised in MVP. No requirement is unaddressed. The ◑ rows are exactly the limitations stated in §9.2, §9.3, §12, §13 and §15 — this matrix consolidates them; it does not introduce new scope.
 
-- **Design validation gate:** every requirement R1–R16 + NFRs maps to at least one section here (consolidated in §14.1). A requirement with no architectural answer is a design gap to resolve before Tasks; R11/R12's real-PR/real-SYN portion is flagged as such in §9.2, §14.1 and §15.
+- **Design validation gate:** every requirement R1–R16 + NFRs maps to at least one section here (consolidated in §14.1). A requirement with no architectural answer is a design gap to resolve before Tasks; R11/R12's real-PR/real-credit-policy platform portion is flagged as such in §9.2, §14.1 and §15.
 
 ---
 
 ## 15. Decisões pendentes, riscos e dependências externas
 
-### Open questions needing human/SYN decision (carried + new)
+### Open questions needing human/credit-policy platform decision (carried + new)
 
 | Ref | Question | Impact if unresolved |
 |-----|----------|----------------------|
 | OQ-2 / OQ-15 | Real Policy Spec **owner, availability, freshness, and true schema** vs. the fixture. | §6/§7 contract may shift; validation rules may change. |
 | OQ-4 | Can a **real deterministic executor** be connected for the demo, or is `SIMULADO` the only path? | Determines whether any shown number is real. |
-| OQ-9 / R-6 | Are SYN **repos/skills/PR mechanics** reachable in the hackathon window? | §9.2 tail degrades to a non-submitted diff; **R11.1/R12.1 real-PR/real-SYN outcome not delivered** without this (requirement-coverage gap, see §9.2). |
+| OQ-9 / R-6 | Are credit-policy platform **repos/skills/PR mechanics** reachable in the hackathon window? | §9.2 tail degrades to a non-submitted diff; **R11.1/R12.1 real-PR/real-platform outcome not delivered** without this (requirement-coverage gap, see §9.2). |
 | OQ-16 *(resolved in 1.2)* | Cross-session persistence and store. | Resolved: DynamoDB for state, S3 audit lake (team decisions D-Q8, D-Q9; §12). |
 | OQ-14 | Does **objective-first reverse discovery** hold for richer real grammars? | §8.2 may need an assisted-selection fallback. |
 | OQ-5 | Which parameters are **visually editable** (params only, or literals too)? | §7 editor scope. |
-| OQ-18 | Real mapping of Policy Spec stages to the four SYN areas. | §6.1: the fixture mapping is provisional; the viewer may label areas incorrectly for a real policy until confirmed. |
+| OQ-18 | Real mapping of Policy Spec stages to the four policy areas. | §6.1: the fixture mapping is provisional; the viewer may label areas incorrectly for a real policy until confirmed. |
 | OQ-6 / OQ-8 / OQ-13 | exact evidence-level definition (what qualifies as `study_validated`, any intermediate level); auto vs. manual finding-run; end-to-end lead-time measurement. | Tunable; defaults proposed above. OQ-7, OQ-10, OQ-11 and OQ-12 were resolved in Requirements 1.2 from the team's answers. |
 
 ### Risks
@@ -659,13 +659,13 @@ Legend: ✓ fully, ◑ partial/with explicit limitation, n/a not exercised in MV
 - **R-1 Fixture ≠ real contract.** All §6/§7 decisions are `[Confirmar: contrato real]`; the design isolates the contract behind Policy Representation so a schema change is localized.
 - **R-2 `case_when` grammar richness.** Real conditions may exceed the closed grammar; mitigation: validation rejects the unknown rather than guessing.
 - **R-3 No real history for the fixture.** Nothing in the MVP demo is a real impact; mitigation: mandatory `SIMULADO` labeling.
-- **R-6 Demonstrative tail feasibility.** Code/tests/PR against SYN is unproven; mitigation: adapter seam + graceful degradation to a reviewable artifact.
+- **R-6 Demonstrative tail feasibility.** Code/tests/PR against the credit-policy platform is unproven; mitigation: adapter seam + graceful degradation to a reviewable artifact.
 
 ### External dependencies
 
 - Upstream producer of the Policy Spec JSON (not the Playground).
 - A real study executor + governed `Motivo de Decisão` access (for `REAL` mode).
-- SYN repositories, conventions, and skills (for the deterministic tail).
+- Credit-policy platform repositories, conventions, and skills (for the deterministic tail).
 - An AI model endpoint (advisory role only).
 
 ---
@@ -690,11 +690,11 @@ flowchart LR
     API --> S3ART[("S3 — artefatos demo (diff + testes)")]
     API --> CW["CloudWatch + X-Ray\nlogs · métricas · custo"]
     API -. "OQ-4 / C1 — RunTask" .-> RUN["ECS Fargate — runner task\n(sob demanda, mesma imagem)"]
-    RUN -. "OQ-4" .-> SYN["Estudos SYN + Motivo de Decisão\n(dados anonimizados/sintéticos)"]
-    API -. "OQ-9 / C3" .-> GH["Repositório SYN (PR real)"]
+    RUN -. "OQ-4" .-> PLAT["Estudos da plataforma + Motivo de Decisão\n(dados anonimizados/sintéticos)"]
+    API -. "OQ-9 / C3" .-> GH["Repositório da plataforma (PR real)"]
 
     classDef conditional stroke-dasharray:5 5,stroke:#b26a00,color:#000,fill:#fff3e0;
-    class RUN,SYN,GH conditional;
+    class RUN,PLAT,GH conditional;
 ```
 
 | Responsabilidade (§4) | Serviço AWS | Observação |
@@ -702,7 +702,7 @@ flowchart LR
 | Interface (SPA) | Amazon S3 + Amazon CloudFront + AWS WAF | Uma SPA única; conteúdo estático. |
 | Entrada da API | Amazon API Gateway (HTTP API) com JWT authorizer do Cognito, VPC Link e Application Load Balancer interno | Throttling por usuário na borda; a aplicação não fica exposta à internet. |
 | Backend modular | Amazon ECS on AWS Fargate — um serviço, no mínimo 2 tasks em 2 AZs, auto scaling por CPU e requisições | Decisão do time D-Q7. Stateless (D-11): qualquer task atende qualquer sessão. |
-| Execução determinística | `SimulatedRunner` dentro da task da API; `SynStudyRunner` (C1) como ECS task sob demanda (RunTask) | Contrato assíncrono e idempotente de §9.4; resposta D-Q1 (jobs SQL/Python sob demanda). |
+| Execução determinística | `SimulatedRunner` dentro da task da API; `RealStudyRunner` (C1) como ECS task sob demanda (RunTask) | Contrato assíncrono e idempotente de §9.4; resposta D-Q1 (jobs SQL/Python sob demanda). |
 | Estado da investigação | Amazon DynamoDB, on-demand | `InvestigationRecord`, execuções (chave de idempotência), findings, decisões, contadores de FinOps (D-Q8). |
 | Auditoria | Amazon S3 append-only (JSON/Parquet) + Amazon Athena | O papel da aplicação não tem permissão de update/delete; Object Lock opcional (D-Q9, §12). |
 | Policy Spec (entrada) | Amazon S3 com versionamento | `policy.source_commit` (commit Git, D-Q2) + versão do objeto = `policyVersion` usado na chave de idempotência. |
@@ -743,7 +743,7 @@ The team's inception exploration produced several architectural options. Those b
 | Micro-frontends (shell + SPAs por domínio) | Uma única experiência é requisito de produto (R2.5); várias SPAs independentes não trazem benefício para uma equipe e um produto. |
 | AWS CodeCommit + CodePipeline como origem das políticas | O Playground consome o Policy Spec já consolidado (R16.3), identificado pelo commit Git; não precisa hospedar o repositório. |
 | Sessões compartilhadas somente leitura | Útil para aprovadores, mas fora do MVP; o modelo de dados (sessão persistida, papéis) já permite adicioná-las sem migração. |
-| Banco sandbox sempre ligado com dados sintéticos | Os experimentos do MVP rodam sobre o fixture e snapshots sintéticos versionados (`datasetVersion`); um banco dedicado entra com o `SynStudyRunner` (C1). |
+| Banco sandbox sempre ligado com dados sintéticos | Os experimentos do MVP rodam sobre o fixture e snapshots sintéticos versionados (`datasetVersion`); um banco dedicado entra com o `RealStudyRunner` (C1). |
 | Agentes gerenciados (Bedrock Agents) para o red team | Os candidatos principais vêm de geradores determinísticos (D-10); o modelo só ordena e redige, o que uma chamada Converse resolve com menos superfície. |
 
 ---
@@ -771,13 +771,13 @@ flowchart LR
         Inv["Investigation Service<br/>hypothesis structuring · scenario build<br/>bounded AI suggestions (advisory)"]
         subgraph EXEC["Execution Service (ImpactStudyRunner)"]
             Sim["SimulatedRunner<br/>mode=SIMULADO"]
-            RealRun["SynStudyRunner (real)<br/>mode=REAL"]
+            RealRun["RealStudyRunner (real)<br/>mode=REAL"]
         end
         EV["Evidence & Validation<br/>ExecutionResult · ValidationOutcome<br/>evidenceLevel = f(status, mode)"]
         Gov["Governance<br/>authz boundary · PII-min · audit · FinOps cap"]
         subgraph ART["Artifact / PR Service"]
             DemoArt["Demo artifact (diff + tests)<br/>labeled, not submitted"]
-            RealPR["Real PR to SYN repo<br/>review-only"]
+            RealPR["Real PR to the platform repo<br/>review-only"]
         end
     end
 
@@ -792,8 +792,8 @@ flowchart LR
     subgraph EXT["External / conditional integrations"]
         Model_AI["AI model<br/>advisory only"]
         SpecSrc[("Policy Spec JSON<br/>upstream producer — OQ-2/OQ-15")]
-        SynStudies["SYN studies + Motivo de Decisão<br/>OQ-4"]
-        SynRepo["SYN repo / skills / PR mechanics<br/>OQ-9 / R-6"]
+        RealStudies["Platform studies + Motivo de Decisão<br/>OQ-4"]
+        PolicyRepo["Platform repo / skills / PR mechanics<br/>OQ-9 / R-6"]
         Store[("Audit lake (S3, append-only)<br/>queried with Athena")]
     end
 
@@ -823,22 +823,22 @@ flowchart LR
 
     %% conditional (dashed) — not in synthetic MVP
     RealRun -. "OQ-4" .-> EV
-    RealRun -. "OQ-4" .-> SynStudies
-    RealPR -. "OQ-9/R-6" .-> SynRepo
+    RealRun -. "OQ-4" .-> RealStudies
+    RealPR -. "OQ-9/R-6" .-> PolicyRepo
     ART -. "OQ-9/R-6" .-> RealPR
     InvRec --> Store
 
     classDef conditional stroke-dasharray:5 5,stroke:#b26a00,color:#000,fill:#fff3e0;
     classDef core fill:#e3f2fd,stroke:#1565c0,color:#000;
     classDef data fill:#ede7f6,stroke:#5e35b1,color:#000;
-    class RealRun,RealPR,SynStudies,SynRepo,SpecSrc conditional;
+    class RealRun,RealPR,RealStudies,PolicyRepo,SpecSrc conditional;
     class UI,Loader,Model,Inv,Sim,EV,Gov,DemoArt core;
     class PolicyData,InvRec,ExecRes,Finding,Artifact,Store data;
 ```
 
 **Legend.**
 - **Solid, blue (core):** runs in the synthetic MVP — UI, Policy Loader/validation, Policy Model + reverse discovery, Investigation Service, `SimulatedRunner`, Evidence & Validation, Governance, and the labeled demo artifact.
-- **Dashed, amber (conditional):** depends on an open question and is **not** available in the synthetic MVP — `SynStudyRunner`/real studies (OQ-4), real PR + SYN repo/skills (OQ-9/R-6). The upstream Policy Spec producer is also upstream/conditional (OQ-2/OQ-15).
+- **Dashed, amber (conditional):** depends on an open question and is **not** available in the synthetic MVP — `RealStudyRunner`/real studies (OQ-4), real PR + credit-policy platform repo/skills (OQ-9/R-6). The upstream Policy Spec producer is also upstream/conditional (OQ-2/OQ-15).
 - **Purple (data):** entities persisted in DynamoDB, with every event also written to the append-only S3 audit lake (§12).
 - **AI model** is advisory only and never writes an impact number; `evidenceLevel` is derived in Evidence & Validation from `status`+`mode` (§6.2, §9.3), so a `SimulatedRunner` result can only ever be `simulated`, never `study_validated`.
 
@@ -849,7 +849,7 @@ flowchart LR
 | Version | Change | Reason |
 |---------|--------|--------|
 | 0.1 → 1.0 | Initial design; approved before Tasks were drafted. | — |
-| 1.1 | §6.1: `stages[].syn_area` and provisional stage → SYN area mapping; OQ-18. | R1.2 names four SYN areas that the fixture stage names did not map to. |
+| 1.1 | §6.1: `stages[].area` and provisional stage → policy area mapping; OQ-18. | R1.2 names four policy areas that the fixture stage names did not map to. |
 | 1.1 | §10.3 and D-10: deterministic candidate generators (G1 shared-input neighbours, G2 branch reachability) and feedback-aware ranking; `Finding.source` gains `deterministic_analysis`. | R8.5–8.6. §8.2 recomputes only the changed path, so discovery never reached R007/R008 in the worked example, where the BASICA band becomes unreachable for approvals. |
 | 1.1 | §12: product metrics (in-app hypothesis-to-evidence time, relevant-finding share) and per-hypothesis token cost. | Primary-objective NFR 2–3; FinOps. |
 | 1.1 | §16 and D-9: AWS deployment view; "Deferred" list updated. | The design named no AWS service, while the hackathon context requires a concrete AWS deployment. |
@@ -860,4 +860,4 @@ flowchart LR
 | 1.2 | `HumanDecision` with Accept / Reject / Defer, immutable and superseded (§6.2, §11). | R10.5–10.6. |
 | 1.2 | §14 tests for audit, idempotency, decisions, scalability and degradation; §14.1 matrix updated. | New testable requirements. |
 | 1.2 | §17: alternatives from the team's inception exploration evaluated and not adopted, with reasons. | Keeps the MVP lean while recording why each option was left out. |
-| 1.2 | §6.1.1: Playground metadata moved to a complementary extensions file (`policy_source`, `stage_syn_area`, `parameter_domains`, `datasets`); the Policy Spec fixture is back to its original content. §7.1 checks 6–8 validate the binding, domains and datasets. Supersedes the 1.1 `stages[].syn_area` field. | R16.3: the Playground must not alter the upstream Policy Spec. Team decisions D-Q2, D-Q6. |
+| 1.2 | §6.1.1: Playground metadata moved to a complementary extensions file (`policy_source`, `stage_area`, `parameter_domains`, `datasets`); the Policy Spec fixture is back to its original content. §7.1 checks 6–8 validate the binding, domains and datasets. Supersedes the 1.1 `stages[].area` field. | R16.3: the Playground must not alter the upstream Policy Spec. Team decisions D-Q2, D-Q6. |

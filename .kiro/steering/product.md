@@ -21,7 +21,7 @@ O Policy Playground é o ambiente em que o especialista de políticas de crédit
 
 - Consome e valida um Policy Spec já consolidado (não o produz).
 - Roda sobre o fixture 100% sintético; todo número é rotulado SIMULADO.
-- Código, testes e PR real para o SYN são condicionais (OQ-9).
+- Código, testes e PR real para a plataforma de política de crédito são condicionais (OQ-9).
 
 ## Métricas que importam
 

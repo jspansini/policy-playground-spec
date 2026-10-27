@@ -16,7 +16,7 @@ from pathlib import Path
 REQUIRED_SECTIONS = ["policy", "stages", "rules", "variables", "parameters", "dag", "motivos", "validation_map", "output_vars"]
 REQUIRED_RULE_FIELDS = ["id", "logic", "inputs", "outputs"]
 KNOWN_LOGIC_TYPES = {"json_extract", "case_when", "matrix_lookup"}
-SYN_AREAS = {"Extraction", "ETL", "Hard filters", "Final base"}
+POLICY_AREAS = {"Extraction", "ETL", "Hard filters", "Final base"}
 
 
 class Report:
@@ -142,13 +142,13 @@ def validate_extensions(spec: dict, ext: dict, folder: Path, rep: Report) -> Non
     if ex.get("source_commit") != spec["policy"].get("source_commit"):
         rep.error(f"Extensions: source_commit '{ex.get('source_commit')}' difere do Policy Spec '{spec['policy'].get('source_commit')}'")
     stage_ids = {s["id"] for s in spec["stages"]}
-    for sid, area in ext.get("stage_syn_area", {}).items():
+    for sid, area in ext.get("stage_area", {}).items():
         if sid not in stage_ids:
-            rep.error(f"Extensions: estágio inexistente '{sid}' em stage_syn_area")
-        elif area not in SYN_AREAS:
-            rep.warn(f"Extensions: área SYN desconhecida '{area}' no estágio {sid}")
-    for sid in stage_ids - set(ext.get("stage_syn_area", {})):
-        rep.warn(f"Estágio {sid} sem área SYN informada")
+            rep.error(f"Extensions: estágio inexistente '{sid}' em stage_area")
+        elif area not in POLICY_AREAS:
+            rep.warn(f"Extensions: área da política desconhecida '{area}' no estágio {sid}")
+    for sid in stage_ids - set(ext.get("stage_area", {})):
+        rep.warn(f"Estágio {sid} sem área da política informada")
     params = {p["id"]: p for p in spec["parameters"]}
     for pid, dom in ext.get("parameter_domains", {}).items():
         if pid not in params:

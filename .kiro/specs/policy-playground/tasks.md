@@ -13,7 +13,7 @@
 
 This plan turns the approved design into incremental, test-driven coding tasks. It builds the MVP core on the **synthetic fixture** (`fixtures/policy-playground-demo-policy.json`) with the **`SimulatedRunner`** (results always labeled `SIMULADO`), exactly as the design scopes it. Tasks are ordered so each step builds on validated earlier work: data contract → policy model/validation → evaluator → scenarios/discovery → simulated execution → comparison → investigation record/audit → AI investigation (including deterministic generators) → UI → governance/FinOps/metrics → end-to-end → AWS deployment.
 
-Tasks that depend on real SYN access or on an open question are marked **[CONDITIONAL]** with the gating OQ/risk; they are not started unless that gate is resolved, matching the design's ◑ coverage rows (§14.1).
+Tasks that depend on real credit-policy platform access or on an open question are marked **[CONDITIONAL]** with the gating OQ/risk; they are not started unless that gate is resolved, matching the design's ◑ coverage rows (§14.1).
 
 ### Development Approach
 
@@ -54,7 +54,7 @@ Tasks that depend on real SYN access or on an open question are marked **[CONDIT
   - Produce a structured `ValidationReport`: schema/shape, referential integrity (`depends_on`, `parameters`, `produced_by`, `motivo.rule_id`, `used_by`), DAG integrity (cycles, orphans, `execution_order` vs `depends_on` mismatch), unknown `logic.type` as a hard error
   - Block exploration/investigation when any blocking check fails; emit a specific, comprehensible message naming the section/field/rule/edge
   - Unit tests: valid fixture passes; mutated fixtures (missing field, dangling `depends_on`, injected cycle, unknown `logic.type`, and a predefined-vs-predefined duplicate-parameter collision per task 2) each fail with the right message and do not proceed
-  - A stage with no entry in the extensions `stage_syn_area`, or with a value outside {Extraction, ETL, Hard filters, Final base}, produces a **non-blocking warning** in the `ValidationReport` (design §6.1)
+  - A stage with no entry in the extensions `stage_area`, or with a value outside {Extraction, ETL, Hard filters, Final base}, produces a **non-blocking warning** in the `ValidationReport` (design §6.1)
   - Checks 6–8 of design §7.1: extensions bound to the loaded Policy Spec (`policy_id`, `source_commit`, known stage and parameter ids); baseline parameter values inside `parameter_domains`; referenced dataset file exists, `contains_pii: false`, `record_count` matches (blocks execution only)
   - Unit tests: an extensions file pointing to another `source_commit` is rejected while the Policy Spec still loads; a P001 domain that excludes 2500 is reported; removing the dataset file blocks execution only; the Policy Spec file is unchanged after the run
   - _Requirements: R16.2, R1.3, R1.2; design §6.1, §7.1, §13_
@@ -191,7 +191,7 @@ Tasks that depend on real SYN access or on an open question are marked **[CONDIT
 ### Phase 6: Interface
 
 - [ ] 14. Implement policy exploration and DAG visualization
-  - Render rules, variables, parameters, dependencies, and `motivos` from the loaded Policy Spec; indicate each element's SYN area (Extraction/ETL/Hard filters/Final base) via `rule.stage_id → stage_syn_area` (extensions file), showing "área SYN não informada" when absent; make each element's origin traceable; show the explicit "cannot be explored" state on invalid/unavailable policy
+  - Render rules, variables, parameters, dependencies, and `motivos` from the loaded Policy Spec; indicate each element's policy area (Extraction/ETL/Hard filters/Final base) via `rule.stage_id → stage_area` (extensions file), showing "área da política não informada" when absent; make each element's origin traceable; show the explicit "cannot be explored" state on invalid/unavailable policy
   - Component tests for rendering and the error/empty states
   - _Requirements: R1.1, R1.2, R1.3, R1.4; design §4, §7.1_
 
@@ -274,26 +274,26 @@ Runs after the MVP core passes task 20. It changes where modules run, not what t
 
 ---
 
-## Conditional tasks (gated by an open question / SYN access — not started until resolved)
+## Conditional tasks (gated by an open question / credit-policy platform access — not started until resolved)
 
 These correspond to the ◑ rows in design §14.1. They are explicitly out of the MVP-core start set and must not be begun until the gate is resolved by a human decision.
 
-- [ ] C1. **[CONDITIONAL — OQ-4]** Implement `SynStudyRunner` (real deterministic execution)
+- [ ] C1. **[CONDITIONAL — OQ-4]** Implement `RealStudyRunner` (real deterministic execution)
   - Behind the same `ImpactStudyRunner` interface; drive real studies, compare the final base against `Motivo de Decisão` using `validation_map`/`output_vars`; implement the §9.3 validation step producing `status ∈ {validated, executed_unvalidated, validation_failed}` and `ValidationOutcome`
   - Run each real study as an on-demand ECS task (RunTask) under the job contract of task 7.2, against anonymized/synthetic data only
   - Validation thresholds/method are themselves gated by **OQ-6**; do not invent tolerances
   - _Requirements: R5.5, R5.6; design §9.1, §9.3 — gated by OQ-4, OQ-6_
 
-- [ ] C2. **[CONDITIONAL — OQ-9 / risk R-6]** Implement code + tests generation (SYN conventions)
-  - **Gate:** not started until a human resolves OQ-9 and confirms the actual SYN repository, skills, and conventions are reachable. Do **not** presume Kiro has that access; do **not** stand up a fictional integration or claim it works.
-  - Only for a human-selected, human-reviewed scenario; when the real SYN access is confirmed, generate functional policy code and tests consistent with the real SYN repo structure and reuse SYN skills where applicable
-  - **Fallback (always available, no SYN access needed):** produce a clearly-labeled demonstration artifact (diff + tests) that is explicitly **not** submitted anywhere — never presented as validated against real SYN
+- [ ] C2. **[CONDITIONAL — OQ-9 / risk R-6]** Implement code + tests generation (credit-policy platform conventions)
+  - **Gate:** not started until a human resolves OQ-9 and confirms the actual credit-policy platform repository, skills, and conventions are reachable. Do **not** presume Kiro has that access; do **not** stand up a fictional integration or claim it works.
+  - Only for a human-selected, human-reviewed scenario; when the real credit-policy platform access is confirmed, generate functional policy code and tests consistent with the real credit-policy platform repo structure and reuse credit-policy platform skills where applicable
+  - **Fallback (always available, no credit-policy platform access needed):** produce a clearly-labeled demonstration artifact (diff + tests) that is explicitly **not** submitted anywhere — never presented as validated against real credit-policy platform
   - Whether a real PR is required for the hackathon is a human decision (not decided here)
   - _Requirements: R11.1, R11.2, R11.3, R11.4; design §9.2 — gated by OQ-9/R-6_
 
 - [ ] C3. **[CONDITIONAL — OQ-9 / risk R-6]** Implement pull-request creation (review-only)
   - **Gate:** not started until a human resolves OQ-9 and the repository access + PR mechanics are confirmed available. Do **not** presume repo access; do **not** simulate a PR as if real.
-  - When confirmed: open a PR against the appropriate SYN repository as a **review request only** (never merge/deploy); report failure explicitly; keep the PR traceable to scenario/evidence/selection
+  - When confirmed: open a PR against the appropriate credit-policy platform repository as a **review request only** (never merge/deploy); report failure explicitly; keep the PR traceable to scenario/evidence/selection
   - **Fallback:** present the PR intent + the traceable package (scenario → evidence → selection → diff) **without opening a real PR**, clearly labeled as not submitted
   - The real-PR requirement is a human call tied to OQ-9 and access availability; this plan does not decide it for the user
   - _Requirements: R12.1, R12.2, R12.3, R12.4; design §9.2 — gated by OQ-9/R-6_
@@ -312,7 +312,7 @@ These correspond to the ◑ rows in design §14.1. They are explicitly out of th
 
 | Requirement | Task(s) |
 |-------------|---------|
-| R1 Policy exploration | 2, 3, 3.1 (SYN-area warning), 14 |
+| R1 Policy exploration | 2, 3, 3.1 (policy-area warning), 14 |
 | R2 Two entry points / hybrid | 15 |
 | R3 Hypothesis structuring | 10 |
 | R4 Human confirmation | 5, 11 |
@@ -360,7 +360,7 @@ This is the Tasks phase deliverable. Per the Kiro Specs workflow, implementation
 | 1.1 | Tasks 12.1 (generators G1/G2) and 12.2 (feedback-aware ranking). | Requirements 1.1 R8.5–8.6; design §10.3. |
 | 1.1 | Task 19.1 (product metrics and token usage). | Requirements 1.1 Primary-objective NFR 2–3; design §12. |
 | 1.1 | Phase 9, tasks 21–23 (CDK stack, Bedrock + Guardrails, CloudWatch). | Design 1.1 §16. |
-| 1.1 | Task 3.1 `syn_area` warning; task 14 area rendering; task 20 extended with the G2 finding; C4 names the DynamoDB store. | Design 1.1 §6.1, §10.3, §16. |
+| 1.1 | Task 3.1 `area` warning; task 14 area rendering; task 20 extended with the G2 finding; C4 names the DynamoDB store. | Design 1.1 §6.1, §10.3, §16. |
 | 1.2 | Task 7.2 (asynchronous, idempotent, reproducible execution) and 9.3 (DynamoDB persistence + S3 audit lake) added to the core. | Requirements 1.2 R14.4–14.6, NFR FinOps 3, Reliability 3; design D-11, D-12. |
 | 1.2 | Task 16 records Accept / Reject / Defer decisions, immutable and superseded; task 18 adds model-outage mode and idempotency keys. | Requirements 1.2 R10.5–10.6, NFR Reliability 2–3. |
 | 1.2 | Task 21 provisions ECS Fargate, API Gateway + VPC Link + ALB, DynamoDB, audit bucket, Athena and Cognito groups with an Azure AD slot; task 24 validates scale and resilience. | Design 1.2 §16, D-9; team decisions D-Q5, D-Q7, D-Q8, D-Q9. |

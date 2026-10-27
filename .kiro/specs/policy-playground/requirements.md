@@ -7,26 +7,26 @@
 - **Status**: Requirements 1.0 approved. Revisions 1.1 and 1.2 (see *Revision History*) await approval; no implementation has started.
 - **Team decisions incorporated**: answers recorded in the team's inception questionnaires (requirements verification and application design), listed in *Decision Log*.
 - **Approval**: Requirements 1.0 approved with all 16 requirements
-- **Context source**: AWS Builders League hackathon; SYN credit-policy environment
+- **Context source**: AWS Builders League hackathon; internal credit-policy platform
 
 ## Introduction
 
-Policy Playground is an interactive environment that lets a credit policy specialist explore an existing SYN credit policy, formulate and test hypotheses, understand their impact through evidence produced by existing deterministic studies, select a promising change, and prepare a code change plus a pull request that follows existing SYN repository conventions.
+Policy Playground is an interactive environment that lets a credit policy specialist explore an existing internal credit-policy platform policy, formulate and test hypotheses, understand their impact through evidence produced by existing deterministic studies, select a promising change, and prepare a code change plus a pull request that follows existing credit-policy platform repository conventions.
 
 The product exists to shorten the end-to-end lead time of a credit policy change. Today, moving from a business hypothesis (for example, raising a minimum-income threshold) to trustworthy evidence requires technical translation, code changes, study execution, and manual iteration, which depends on other people and creates a bottleneck. There is also a discovery gap: investigations tend to cover only the questions people already know to ask, leaving rule interactions, edge cases, and unexpected behavior unexplored.
 
-The guiding principle is **AI proposes, studies prove, humans decide**. AI may interpret intent, structure hypotheses, select tools, propose investigations, analyze study outputs, and explain findings. AI must not invent impact calculations, present unsupported hypotheses as proven, approve policy changes, or modify production policy. The existing studies and the `Motivo de Decisão` dataset remain the source of truth for impact. The specialist is always responsible for deciding whether a change advances. This feature accelerates the existing SYN workflow; it is not a parallel policy platform.
+The guiding principle is **AI proposes, studies prove, humans decide**. AI may interpret intent, structure hypotheses, select tools, propose investigations, analyze study outputs, and explain findings. AI must not invent impact calculations, present unsupported hypotheses as proven, approve policy changes, or modify production policy. The existing studies and the `Motivo de Decisão` dataset remain the source of truth for impact. The specialist is always responsible for deciding whether a change advances. This feature accelerates the existing credit-policy platform workflow; it is not a parallel policy platform.
 
 ### Feature Summary
 
-An interactive, evidence-based environment for exploring SYN credit policies, testing hypotheses against existing deterministic studies, discovering overlooked scenarios with AI assistance, and preparing a human-reviewed code change and pull request.
+An interactive, evidence-based environment for exploring internal credit-policy platform policies, testing hypotheses against existing deterministic studies, discovering overlooked scenarios with AI assistance, and preparing a human-reviewed code change and pull request.
 
 ### Scope
 
 **In scope (MVP):**
 
-- Consuming and validating a previously consolidated Policy Spec JSON that represents the policy and gathers the relevant variables, rules, and relationships across the four SYN areas. Producing/consolidating that artifact is not the Playground's responsibility in this phase.
-- Interactive exploration of an existing SYN policy and its rules, variables, dependencies, and context, based on that consolidated Policy Spec.
+- Consuming and validating a previously consolidated Policy Spec JSON that represents the policy and gathers the relevant variables, rules, and relationships across the four policy areas. Producing/consolidating that artifact is not the Playground's responsibility in this phase.
+- Interactive exploration of an existing policy and its rules, variables, dependencies, and context, based on that consolidated Policy Spec.
 - Two entry points: visual exploration, and starting from a business question or hypothesis.
 - A hybrid interaction model combining visual controls for known, supported parameters with natural-language interaction for more complex hypotheses.
 - Human confirmation of any AI-proposed modification before it is applied to an experimental scenario.
@@ -37,7 +37,7 @@ An interactive, evidence-based environment for exploring SYN credit policies, te
 - Turning a relevant finding into an investigable scenario.
 - Distinguishing evidence-backed conclusions from unsupported or inconclusive hypotheses, including communicating when available studies cannot answer a question.
 - Human review and selection of a promising change.
-- **Demonstrative tail (stretch, gated):** generation of code and appropriate tests consistent with existing SYN repository structure and conventions, and opening a pull request for human review. In the MVP this is demonstrated as a labeled, non-submitted change artifact; generating SYN-consistent code and opening a real pull request are delivered only if SYN repository access is confirmed (OQ-9). This aligns with the Working Backwards document, which places implementation (step 9) after the MVP core.
+- **Demonstrative tail (stretch, gated):** generation of code and appropriate tests consistent with existing credit-policy platform repository structure and conventions, and opening a pull request for human review. In the MVP this is demonstrated as a labeled, non-submitted change artifact; generating platform-consistent code and opening a real pull request are delivered only if credit-policy platform repository access is confirmed (OQ-9). This aligns with the Working Backwards document, which places implementation (step 9) after the MVP core.
 - Keeping the domain-context artifact aligned with relevant policy changes.
 
 **Out of scope (MVP):**
@@ -71,7 +71,7 @@ The requirements below separate three things explicitly, so Design does not inhe
 | **Credit policy specialist** (primary) | Explore a policy, form and test hypotheses without writing code, understand impact with evidence, decide whether a change is promising, and initiate a reviewed code change. |
 | **Policy / risk approver** (secondary) | Review traceable evidence to judge whether a proposed change should advance. |
 | **Study / data analyst** (secondary) | Benefit from reuse of governed studies and fewer ad-hoc requests. |
-| **Decision-engine / SYN engineer** (secondary) | Receive an unambiguous proposed change as a reviewable pull request following SYN conventions. |
+| **Decision-engine / credit-platform engineer** (secondary) | Receive an unambiguous proposed change as a reviewable pull request following credit-policy platform conventions. |
 | **AI agent capability** (system actor) | Interpret intent, structure hypotheses, select studies/tools, propose investigations, analyze outputs, explain findings — never calculate impact or decide. |
 
 Throughout this document, "the Playground" is the system under specification.
@@ -80,17 +80,17 @@ Throughout this document, "the Playground" is the system under specification.
 
 ### Requirement 1: Policy exploration
 
-**User Story:** As a credit policy specialist, I want to open an existing SYN policy and see its rules, variables, dependencies, and context, so that I understand what I can investigate before forming a hypothesis.
+**User Story:** As a credit policy specialist, I want to open an existing policy and see its rules, variables, dependencies, and context, so that I understand what I can investigate before forming a hypothesis.
 
 #### Acceptance Criteria
 
 1. WHEN a specialist selects a policy that is available in the Playground THEN the Playground SHALL present that policy's rules, variables, dependencies, and supporting context sourced from its consolidated Policy Spec (Requirement 16).
-2. WHERE a policy element originates in one of the four SYN areas (Extraction, ETL, Hard filters, Final base) THEN the Playground SHALL indicate which area the element belongs to.
+2. WHERE a policy element originates in one of the four policy areas (Extraction, ETL, Hard filters, Final base) THEN the Playground SHALL indicate which area the element belongs to.
 3. IF the selected policy cannot be loaded or its context is unavailable THEN the Playground SHALL inform the specialist that the policy cannot be explored and SHALL NOT present partial content as if it were complete.
 4. WHEN a specialist views a policy element THEN the Playground SHALL make the originating evidence or definition for that element traceable (viewable or linkable), rather than presenting it without provenance.
 
 - **Priority**: High
-- **Dependencies**: Requirement 16 (consolidated Policy Spec). Open Question OQ-1 (which policy). Open Question OQ-18 (mapping of Policy Spec stages to the four SYN areas, for criterion 2). `[Feasibility: Design]` for how policy content is sourced from the Policy Spec.
+- **Dependencies**: Requirement 16 (consolidated Policy Spec). Open Question OQ-1 (which policy). Open Question OQ-18 (mapping of Policy Spec stages to the four policy areas, for criterion 2). `[Feasibility: Design]` for how policy content is sourced from the Policy Spec.
 
 ### Requirement 2: Two entry points into an investigation
 
@@ -144,7 +144,7 @@ Throughout this document, "the Playground" is the system under specification.
 
 1. WHEN a confirmed scenario is evaluated THEN the Playground SHALL obtain its impact from deterministic execution over the relevant policy chain, comparing the resulting final base against the historical decisions in `Motivo de Decisão`, and SHALL NOT generate impact numbers by any means other than that deterministic execution.
 2. THE Playground SHALL provide impact analysis as a reusable capability driven by the scenario under test, rather than being conceptually limited to directly invoking or transforming the current `analise de impacto de estudos` file; that file is a functional reference for the behavior, not the required execution path.
-3. WHEN a scenario is defined from a hypothesis or analysis objective THEN the Playground SHALL identify which policy rules, variables, and stages across the four SYN areas (Extraction, ETL, Hard filters, Final base) are required to answer it, using the consolidated Policy Spec (Requirement 16) as the structured source of context together with the execution capabilities and dependencies identified in Design. Dependency discovery MAY start from the desired result/objective, and SHALL NOT require rebuilding the whole policy or regenerating the Policy Spec during the investigation.
+3. WHEN a scenario is defined from a hypothesis or analysis objective THEN the Playground SHALL identify which policy rules, variables, and stages across the four policy areas (Extraction, ETL, Hard filters, Final base) are required to answer it, using the consolidated Policy Spec (Requirement 16) as the structured source of context together with the execution capabilities and dependencies identified in Design. Dependency discovery MAY start from the desired result/objective, and SHALL NOT require rebuilding the whole policy or regenerating the Policy Spec during the investigation.
 4. WHEN the experimental flow is executed THEN the Playground SHALL respect the valid dependency order of the policy DAG, regardless of how the required dependencies were discovered.
 5. THE Playground SHALL treat real deterministic execution as the preferred MVP path for calculating impact.
 6. WHEN a deterministic execution produces a result THEN the Playground SHALL associate that result with the scenario and hypothesis that triggered it.
@@ -154,7 +154,7 @@ Throughout this document, "the Playground" is the system under specification.
 10. THE Playground SHALL keep AI reasoning and deterministic calculation separable, so that no AI-produced text is recorded as a calculated impact.
 
 - **Priority**: High
-- **Dependencies**: Requirement 3. `[Feasibility: Design]` for how the reusable impact-analysis capability is derived from the current analysis as a functional reference, how required dependencies are discovered from an objective, and how the DAG chain is executed in valid order (the current SYN workflow can recalculate impacts, but Playground integration is not yet built; see OQ-4 and OQ-14).
+- **Dependencies**: Requirement 3. `[Feasibility: Design]` for how the reusable impact-analysis capability is derived from the current analysis as a functional reference, how required dependencies are discovered from an objective, and how the DAG chain is executed in valid order (the current credit-policy platform workflow can recalculate impacts, but Playground integration is not yet built; see OQ-4 and OQ-14).
 
 ### Requirement 6: Baseline-versus-scenario comparison
 
@@ -230,27 +230,27 @@ Throughout this document, "the Playground" is the system under specification.
 - **Priority**: High
 - **Dependencies**: Requirements 6, 7.
 
-### Requirement 11: Code and test generation following SYN conventions
+### Requirement 11: Code and test generation following credit-policy platform conventions
 
-**User Story:** As a decision-engine/SYN engineer, I want a selected change to produce code and tests that follow existing SYN repository structure and conventions, so that the output is reviewable and consistent with how SYN works.
+**User Story:** As a decision-engine/credit-platform engineer, I want a selected change to produce code and tests that follow existing credit-policy platform repository structure and conventions, so that the output is reviewable and consistent with how credit-policy platform works.
 
 #### Acceptance Criteria
 
-1. WHEN a specialist has selected a human-reviewed scenario THEN the Playground SHALL be able to generate corresponding functional policy code and appropriate tests consistent with the existing SYN repository structure and conventions, as an intended end-to-end MVP outcome.
+1. WHEN a specialist has selected a human-reviewed scenario THEN the Playground SHALL be able to generate corresponding functional policy code and appropriate tests consistent with the existing credit-policy platform repository structure and conventions, as an intended end-to-end MVP outcome.
 2. THE Playground SHALL generate code only for a scenario that a human has selected, and SHALL NOT generate production-bound code autonomously from an unselected scenario.
-3. WHERE existing SYN skills or conventions apply to a stage of this workflow THEN the Playground SHALL reuse them where possible rather than reimplementing equivalent capability.
-4. THE Playground SHALL NOT assume that the existing SYN documentation-generation skill already produces functional policy code; functional code generation is a distinct capability subject to feasibility validation. `[Feasibility: Design]`
+3. WHERE existing credit-policy platform skills or conventions apply to a stage of this workflow THEN the Playground SHALL reuse them where possible rather than reimplementing equivalent capability.
+4. THE Playground SHALL NOT assume that the existing credit-policy platform documentation-generation skill already produces functional policy code; functional code generation is a distinct capability subject to feasibility validation. `[Feasibility: Design]`
 
-- **Priority**: Medium — demonstrative tail (stretch). The MVP delivers a labeled, non-submitted change artifact; criterion 1 against the real SYN repository is delivered only if OQ-9 confirms access.
-- **Dependencies**: Requirement 10. Open Question OQ-9 (which SYN skills/repos are reachable). `[Feasibility: Design]`
+- **Priority**: Medium — demonstrative tail (stretch). The MVP delivers a labeled, non-submitted change artifact; criterion 1 against the real credit-policy platform repository is delivered only if OQ-9 confirms access.
+- **Dependencies**: Requirement 10. Open Question OQ-9 (which credit-policy platform skills/repos are reachable). `[Feasibility: Design]`
 
 ### Requirement 12: Pull request creation for human review
 
-**User Story:** As a decision-engine/SYN engineer and as an approver, I want generated changes to arrive as a pull request for review, so that nothing reaches production without human review.
+**User Story:** As a decision-engine/credit-platform engineer and as an approver, I want generated changes to arrive as a pull request for review, so that nothing reaches production without human review.
 
 #### Acceptance Criteria
 
-1. WHEN code and tests have been generated for a selected scenario THEN the Playground SHALL be able to open a pull request against the appropriate SYN repository for human review.
+1. WHEN code and tests have been generated for a selected scenario THEN the Playground SHALL be able to open a pull request against the appropriate credit-policy platform repository for human review.
 2. THE Playground SHALL treat opening a pull request as a request for review only, and SHALL NOT merge, deploy, or otherwise apply the change to production.
 3. IF the pull request cannot be created THEN the Playground SHALL report the failure to the specialist and SHALL NOT indicate that a change was delivered.
 4. WHERE a pull request is opened THEN the Playground SHALL make its link to the originating scenario, evidence, and human selection traceable.
@@ -264,9 +264,9 @@ Throughout this document, "the Playground" is the system under specification.
 
 #### Acceptance Criteria
 
-1. WHERE the Playground relies on a generated domain-context artifact that explains policy concepts, variables, and relationships across the four SYN areas THEN the Playground SHALL aim to use a representation that reflects the current state of the policy it describes.
+1. WHERE the Playground relies on a generated domain-context artifact that explains policy concepts, variables, and relationships across the four policy areas THEN the Playground SHALL aim to use a representation that reflects the current state of the policy it describes.
 2. IF the Playground cannot confirm the domain-context artifact is current (for example, relevant policy changes may have occurred since it was produced) THEN the Playground SHALL make that uncertainty visible to the specialist and SHALL NOT silently use the potentially outdated artifact as if it were current.
-3. WHERE existing SYN capabilities make regeneration of the domain-context artifact straightforward THEN the Playground MAY refresh it for the MVP; otherwise automated regeneration is a possible future evolution rather than an MVP requirement. `[Feasibility: Design]` for how staleness is detected and whether straightforward regeneration exists.
+3. WHERE existing credit-policy platform capabilities make regeneration of the domain-context artifact straightforward THEN the Playground MAY refresh it for the MVP; otherwise automated regeneration is a possible future evolution rather than an MVP requirement. `[Feasibility: Design]` for how staleness is detected and whether straightforward regeneration exists.
 
 - **Priority**: Medium
 - **Dependencies**: Open Question OQ-2.
@@ -311,7 +311,7 @@ Throughout this document, "the Playground" is the system under specification.
 
 #### Acceptance Criteria
 
-1. WHEN a policy is made available to the Playground THEN the Playground SHALL consume a previously consolidated Policy Spec (a structured JSON artifact) that represents the policy and gathers the relevant variables, rules, and relationships across the four SYN areas (Extraction, ETL, Hard filters, Final base).
+1. WHEN a policy is made available to the Playground THEN the Playground SHALL consume a previously consolidated Policy Spec (a structured JSON artifact) that represents the policy and gathers the relevant variables, rules, and relationships across the four policy areas (Extraction, ETL, Hard filters, Final base).
 2. WHEN the Playground loads a Policy Spec THEN it SHALL validate the artifact before using it, and IF the Policy Spec is missing, unreadable, or fails validation THEN the Playground SHALL inform the specialist and SHALL NOT proceed with exploration or investigation on an invalid Policy Spec.
 3. THE Playground SHALL treat the Policy Spec as an input produced upstream, and SHALL NOT be responsible for generating or consolidating it, nor for rebuilding the whole policy or regenerating the Policy Spec during an investigation.
 4. WHEN investigating dependencies for an analysis objective THEN the Playground SHALL use the Policy Spec as the structured source of context (per Requirement 5), alongside the execution capabilities and dependencies identified in Design.
@@ -366,10 +366,10 @@ These are stated as observable expectations. Concrete thresholds are open questi
 
 ### Technical Constraints
 
-- Impact calculations must come from deterministic execution over SYN policy logic, compared against the `Motivo de Decisão` dataset; the Playground must not compute impact by other means.
+- Impact calculations must come from deterministic execution over credit-policy platform policy logic, compared against the `Motivo de Decisão` dataset; the Playground must not compute impact by other means.
 - The current `analise de impacto de estudos` file (which compares the produced final base against `Motivo de Decisão`) is a **functional reference** for the impact-analysis behavior. It is specific and has coupled logic; it is not a required architecture, and the Playground must not be constrained to directly integrating, wrapping, or transforming it into an API. The chosen direction is to extract its concept and functional behavior into a generic, reusable impact-analysis capability.
-- The Playground must accelerate the existing SYN workflow and reuse SYN knowledge, conventions, and capabilities where appropriate, rather than introducing a parallel policy platform.
-- The existing policy logic is distributed across the four SYN areas (Extraction, ETL, Hard filters, Final base) and can be extracted as needed. Extracting that source logic or producing a structured representation of it does not by itself make interactive modifications executable; the representation and the execution mechanism for modifications are still being designed and must not be assumed to follow automatically from extraction.
+- The Playground must accelerate the existing credit-policy platform workflow and reuse credit-policy platform knowledge, conventions, and capabilities where appropriate, rather than introducing a parallel policy platform.
+- The existing policy logic is distributed across the four policy areas (Extraction, ETL, Hard filters, Final base) and can be extracted as needed. Extracting that source logic or producing a structured representation of it does not by itself make interactive modifications executable; the representation and the execution mechanism for modifications are still being designed and must not be assumed to follow automatically from extraction.
 - For the MVP, the structured representation of the policy is a **consolidated Policy Spec JSON supplied upstream**, which the Playground consumes and validates (Requirement 16). Its generation/consolidation is out of scope for the Playground in this phase, and its concrete schema is not decided here. The Policy Spec is a source of structured context for reverse dependency discovery; it is not, by itself, proof that a modification is executable.
 - Experimental execution must stay isolated from production policy and use governed data; a scenario run must not affect production.
 - The internal policy representation, editor, study-translation mechanism, agent orchestration, and specific AWS services/frameworks are intentionally undecided and belong to Design.
@@ -381,7 +381,7 @@ These are stated as observable expectations. Concrete thresholds are open questi
 
 ### Assumptions (to confirm at the approval gate)
 
-- **A-1**: A specialist can select from one or more existing SYN policies made available for the demo; the specific policy is a configurable demonstration choice, not a hardcoded product rule (ties to OQ-1).
+- **A-1**: A specialist can select from one or more existing credit-policy platform policies made available for the demo; the specific policy is a configurable demonstration choice, not a hardcoded product rule (ties to OQ-1).
 - **A-2**: The success metrics in the Working Backwards proposal are proposed business targets, not acceptance criteria, unless explicitly promoted (ties to OQ-13). They are therefore not encoded as pass/fail criteria in this document.
 - **A-3**: "AI challenge" (red-team) behavior and the specialist's own hypothesis testing share one session and one experience (from product context).
 - **A-4**: A hybrid interaction model (visual controls for known parameters plus natural language for complex hypotheses) is a confirmed MVP requirement (Requirement 2). What remains open is only the depth and generality of visual editing — which parameters are visually editable (OQ-5).
@@ -401,12 +401,12 @@ Each item is a decision not yet made. Where a requirement depends on one, the re
 - **OQ-6**: What exactly qualifies a finding as evidence-backed vs. unproven; are there partial-evidence states? (Affects R7.)
 - **OQ-7** *(resolved in 1.2)*: For cost control, is a simple bound on AI investigations per session sufficient for the MVP, and what is that bound? → Yes: configurable per-session limits, default 10 findings shown (NFR FinOps 2).
 - **OQ-8**: When a finding becomes a scenario, does study execution start automatically or on explicit specialist action? (Affects R9.)
-- **OQ-9**: Which SYN skills and repositories are reachable for structuring, code generation, and PR creation during the hackathon? (Affects R11, R12. `[Feasibility: Design]`.)
+- **OQ-9**: Which credit-policy platform skills and repositories are reachable for structuring, code generation, and PR creation during the hackathon? (Affects R11, R12. `[Feasibility: Design]`.)
 - **OQ-10** *(resolved in 1.2)*: What audit depth is required for the MVP? → Persisted history plus an append-only audit data lake (R14.4–14.6; Decision Log D-Q9). Write-once storage enforcement is a Design option.
 - **OQ-11** *(resolved in 1.2)*: Does access control reuse an existing identity mechanism? → Yes: federation with the corporate Azure AD; simplified roles allowed for the demo (R15.4, R15.6; Decision Log D-Q5).
 - **OQ-12** *(resolved in 1.2 for hypothesis structuring)*: Is there an interactive latency target? → 30 s at P95 for hypothesis structuring (NFR performance 2); no target for study execution in the MVP.
 - **OQ-13**: How would end-to-end lead-time reduction (the central objective) be measured for the MVP, and should any Working Backwards success metric become an acceptance criterion? If so, how is each measured? (Affects Primary-objective NFR; no numeric target is invented here.) *Partially addressed in 1.1:* the in-app hypothesis-to-evidence time and the relevant-finding share are instrumented (Primary objective NFR 2–3); the end-to-end business baseline and targets remain open.
-- **OQ-18**: How do the stages of a real Policy Spec map to the four SYN areas (Extraction, ETL, Hard filters, Final base) required by R1.2? The synthetic fixture uses different stage names (Extração, Elegibilidade, Oferta, Consolidação) and declares a provisional mapping in a complementary extensions file (`stage_syn_area`), leaving the Policy Spec unchanged; the real mapping must be confirmed against the real contract. (Affects R1.2, R16.)
+- **OQ-18**: How do the stages of a real Policy Spec map to the four policy areas (Extraction, ETL, Hard filters, Final base) required by R1.2? The synthetic fixture uses different stage names (Extração, Elegibilidade, Oferta, Consolidação) and declares a provisional mapping in a complementary extensions file (`stage_area`), leaving the Policy Spec unchanged; the real mapping must be confirmed against the real contract. (Affects R1.2, R16.)
 
 ## Decision Log
 
@@ -432,10 +432,10 @@ Answers that were **not** adopted, with the reason, are recorded in Design §17.
 
 The following are flagged `[Feasibility: Design]` above and must be validated technically before being committed as achievable:
 
-- Sourcing and representing policy content from SYN, and whether/how interactive modifications become executable (R1, R13) — note that extracting source logic does not by itself make modifications executable.
+- Sourcing and representing policy content from the credit-policy platform, and whether/how interactive modifications become executable (R1, R13) — note that extracting source logic does not by itself make modifications executable.
 - Consuming and validating the upstream consolidated Policy Spec, and using it as the structured context for reverse dependency discovery from an analysis objective, without regenerating it per investigation (R16, R5) — reverse dependency discovery remains an objective subject to technical validation.
 - Deriving a generic, reusable impact-analysis capability from the current `analise de impacto de estudos` file as a functional reference (not a direct integration), including discovering the required dependencies of a desired analysis from its objective and executing the policy DAG in valid dependency order; and defining a clearly-labeled recorded/simulated fallback if real execution is infeasible (R3, R5, R6).
-- Reuse of existing SYN skills, and whether functional policy-code generation (distinct from the existing documentation-generation skill) is achievable within SYN conventions (R11).
+- Reuse of existing credit-policy platform skills, and whether functional policy-code generation (distinct from the existing documentation-generation skill) is achievable within credit-policy platform conventions (R11).
 - Repository access and pull-request creation mechanics (R12).
 - Detecting domain-context staleness, and whether straightforward regeneration exists for the MVP (R13).
 - Governed data access and federation with the existing corporate identity, without building a full identity platform (R15).
@@ -444,15 +444,15 @@ The following are flagged `[Feasibility: Design]` above and must be validated te
 
 | Term | Definition |
 |------|------------|
-| **SYN** | The existing internal credit-policy environment and knowledge base containing policy definitions, studies, and domain knowledge; the environment this feature makes more accessible. |
-| **DM-outside-DM ("DM fora do DM")** | A separate initiative holding decision logic extracted from FICO Decision Manager to run outside the FICO DM runtime. Distinct from SYN; not assumed to be the Playground's data source. |
-| **Policy** | A credit policy in SYN, organized across four areas: Extraction, ETL, Hard filters, Final base. |
+| **Credit-policy platform** | The existing internal credit-policy environment and knowledge base containing policy definitions, studies, and domain knowledge; the environment this feature makes more accessible. |
+| **DM-outside-DM ("DM fora do DM")** | A separate initiative holding decision logic extracted from FICO Decision Manager to run outside the FICO DM runtime. Distinct from the credit-policy platform; not assumed to be the Playground's data source. |
+| **Policy** | A credit policy in the credit-policy platform, organized across four areas: Extraction, ETL, Hard filters, Final base. |
 | **`Motivo de Decisão`** | The existing dataset of historical production credit decisions used as the data basis for analyses. |
-| **Study** | An existing deterministic SYN computation that produces impact results; the source of truth for impact. |
+| **Study** | An existing deterministic credit-policy platform computation that produces impact results; the source of truth for impact. |
 | **Impact analysis** | The deterministic capability of executing the relevant policy chain for a scenario and comparing the produced final base against `Motivo de Decisão`. In the MVP this is a generic, reusable capability; the current `analise de impacto de estudos` file is its functional reference, not its required implementation. |
-| **`analise de impacto de estudos`** | The existing, specific SYN file (with coupled logic) that compares a produced final base against `Motivo de Decisão`. Used as a functional reference for the impact-analysis behavior, not as a mandated integration or architecture. |
-| **Policy DAG** | The dependency graph of policy logic across the four SYN areas (Extraction, ETL, Hard filters, Final base); experimental execution must respect its valid dependency order. |
-| **Policy Spec (JSON)** | A previously consolidated, structured JSON artifact that represents a policy and gathers its relevant variables, rules, and relationships across the four SYN areas. For the MVP it is supplied upstream; the Playground consumes and validates it but does not generate it. Its concrete schema is deferred to Design. |
+| **`analise de impacto de estudos`** | The existing, specific credit-policy platform file (with coupled logic) that compares a produced final base against `Motivo de Decisão`. Used as a functional reference for the impact-analysis behavior, not as a mandated integration or architecture. |
+| **Policy DAG** | The dependency graph of policy logic across the four policy areas (Extraction, ETL, Hard filters, Final base); experimental execution must respect its valid dependency order. |
+| **Policy Spec (JSON)** | A previously consolidated, structured JSON artifact that represents a policy and gathers its relevant variables, rules, and relationships across the four policy areas. For the MVP it is supplied upstream; the Playground consumes and validates it but does not generate it. Its concrete schema is deferred to Design. |
 | **Hypothesis** | A proposed, testable policy change expressed by the specialist or structured by the AI; a proposal, not evidence. |
 | **Scenario** | A confirmed experimental configuration (a hypothesis applied to a policy) that can be evaluated by studies. |
 | **Finding** | An AI-surfaced observation or proposed investigation; evidence-backed when supported by a study result, otherwise unproven. |
@@ -486,11 +486,11 @@ The design must preserve the separation between functional requirements and impl
 | 1.1 | R11 and R12 reclassified from High to Medium as a demonstrative, gated tail; MVP scope line updated accordingly. | Requirements, Design (§9.2, §14.1), Tasks (C2/C3) and the Working Backwards document disagreed on whether code/PR generation is MVP core. |
 | 1.1 | R8 criteria 5–6 added: deterministic candidate findings beyond the changed path, and feedback-aware ranking. | Discovery previously relied only on the model; the Working Backwards FAQ promises that relevance feedback prioritizes later suggestions. |
 | 1.1 | Primary-objective NFR 2–3 added: instrumented in-app hypothesis-to-evidence time and relevant-finding share. | Gives the lead-time objective a measurable proxy without inventing a business target (OQ-13 stays open for the end-to-end metric). |
-| 1.1 | OQ-18 added: mapping of Policy Spec stages to the four SYN areas. | The fixture stage names differ from the four areas named in R1.2. |
+| 1.1 | OQ-18 added: mapping of Policy Spec stages to the four policy areas. | The fixture stage names differ from the four areas named in R1.2. |
 | 1.1 | Status header corrected. | The 1.0 header said no tasks.md would exist before Design approval, while tasks.md already exists. |
 | 1.2 | Decision Log added with the team's inception answers; OQ-7, OQ-10, OQ-11 and OQ-12 resolved. | The team had already answered these questions; the spec now records the answers and their origin. |
 | 1.2 | R10.5–10.6: decision outcomes Accept / Reject / Defer, with rationale; decisions are immutable and superseded, never edited. | Integrity of the decision trail; "Defer" reflects how approvals actually happen. |
 | 1.2 | R14.4–14.6: persisted history, append-only audit store, reproducibility from recorded inputs. | Team decisions D-Q8 and D-Q9; a decision must be re-checkable later. |
 | 1.2 | R15.4–15.6: corporate identity federation, anonymized/synthetic data in an isolated environment, minimum role set. | Team decisions D-Q5 and D-Q6. |
 | 1.2 | NFR additions: 30 s P95 for hypothesis structuring, Scalability section (10–50 users, stateless backend, isolated execution), FinOps defaults and result reuse, reliability under model outage and idempotent retries. | Robustness and scale requirements were implicit; they are now testable. |
-| 1.2 | OQ-18 wording: the provisional SYN-area mapping lives in a complementary extensions file, not inside the Policy Spec. | R16.3: the Playground consumes the Policy Spec and must not alter it. |
+| 1.2 | OQ-18 wording: the provisional policy-area mapping lives in a complementary extensions file, not inside the Policy Spec. | R16.3: the Playground consumes the Policy Spec and must not alter it. |

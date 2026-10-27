@@ -11,9 +11,9 @@
     "repository": "synthetic/policy-playground-demo",
     "path": "policies/microcredito-demo",
     "commit": "synthetic-demo-v1",
-    "note": "Em uma política real, commit é o Git commit da política no SYN (decisão do time D-Q2) e deve ser igual a source_commit do Policy Spec."
+    "note": "Em uma política real, commit é o Git commit da política na plataforma de política de crédito (decisão do time D-Q2) e deve ser igual a source_commit do Policy Spec."
   },
-  "stage_syn_area": {
+  "stage_area": {
     "01": "Extraction",
     "02": "Hard filters",
     "03": "Final base",
